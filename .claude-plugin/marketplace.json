@@ -1,0 +1,13 @@
+{
+  "name": "cardflow",
+  "owner": {
+    "name": "Luca Tresoldi"
+  },
+  "plugins": [
+    {
+      "name": "cardflow",
+      "source": "./",
+      "description": "Organizza lo sviluppo in progetto, ordini e card, sopra le skill di Matt Pocock."
+    }
+  ]
+}
