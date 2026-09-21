@@ -17,7 +17,7 @@ documento `<work>` indica quella radice.
 
 ```text
 <work>/orders/<id>-<slug>/0-ORDER.md       l'ordine: Id, titolo, stato, ramo
-<work>/cards/<id>-<slug>/0-CARD.md         la card: Id, titolo, stato, priorità, ordine, base
+<work>/cards/<id>-<slug>/0-CARD.md         la card: Id, titolo, stato, priorità, ordine, base, bloccanti
 <work>/cards/<id>-<slug>/1-SPEC.md         la spec della card, scritta da /mattpocock-skills:to-spec
 <work>/cards/<id>-<slug>/2-OPEN-POINTS.md  i punti aperti della card, se servono
 <work>/cards/<id>-<slug>/tickets/NN-<slug>.md
@@ -25,15 +25,21 @@ documento `<work>` indica quella radice.
 <work>/cards/<id>-<slug>/.scratch/         le note che muoiono con la card
 ```
 
-L'Id di una card o di un ordine si legge dal campo `Id:` della sua intestazione, non dal nome della cartella:
-la card `260916` è quella il cui `cards/260916-*/0-CARD.md` porta `Id: 260916`.
+Una card o un ordine si indicano con l'Id o con il nome intero della cartella. Se esiste una cartella con quel nome
+esatto, è quella; altrimenti è la cartella `<valore>-*` la cui intestazione porta `Id: <valore>`: la card `26258KD`
+è `cards/26258KD-pdf-export/`. Nei testi l'Id va con il titolo, «`26258KD` (esportazione in PDF)».
+
+La riga `Blocked by:` di `0-CARD.md` elenca, con codice e titolo, le voci di registro che tengono ferma la card. Un
+codice blocca finché esiste come voce `### <codice> —` in un registro `2-` o `3-OPEN-POINTS` di `<work>/project/` o
+di un ordine; una voce risolta si cancella, e il blocco sparisce con lei.
 
 ## Quando una skill dice «pubblica sul tracker»
 
 **Una spec**, da `/mattpocock-skills:to-spec`. Individua la card: è l'Id nominato nella conversazione, e se non c'è lo chiedi.
 Leggi `0-CARD.md`. **Se il campo `Ordine:` è vuoto, fermati**: chiedi a quale ordine assegnare la card e non
 scrivere la spec finché non lo ricevi. L'ordine deve esistere e avere `Stato: OPEN`; scrivilo in `Ordine:`, cosa
-permessa perché la card è ancora in `BACKLOG`. Poi scrivi `cards/<id>-<slug>/1-SPEC.md`. L'intestazione resta in
+permessa perché la card è ancora in `BACKLOG`. Se la card ha bloccanti aperti in `Blocked by:`, dillo prima di
+scrivere; se l'operatore vuole procedere, si procede. Poi scrivi `cards/<id>-<slug>/1-SPEC.md`. L'intestazione resta in
 `0-CARD.md`; le due righe sull'idea sotto di lei si possono togliere. La spec non porta la riga `Status:`: lo
 stato della card sta in `0-CARD.md`.
 
@@ -44,16 +50,17 @@ ticket che devono chiudersi prima, e `Status: ready-for-agent`. Non usare `.scra
 
 ## Quando una skill dice «recupera il ticket»
 
-Un ticket si cita `<card-id>/NN`: `260916/01` è il file `cards/260916-*/tickets/01-*.md`. Un numero da solo non è
+Un ticket si cita `<card-id>/NN`: `26258KD/01` è il file `cards/26258KD-*/tickets/01-*.md`. Un numero da solo non è
 un ticket e non si passa a `/mattpocock-skills:implement`: si lavora un ticket per conversazione.
 
 ## Prima di un ticket
 
-Due controlli, sempre, prima di toccare il codice.
+Tre controlli, sempre, prima di toccare il codice.
 
-1. **Bloccanti.** Per ogni numero in `Blocked by:`, se il file di quel ticket esiste ancora il ticket è aperto:
-   fermati e dillo.
-2. **Ramo.** Confronta `Ramo:` in `0-ORDER.md` dell'ordine della card con il ramo attivo del repository. Se sono
+1. **Bloccanti del ticket.** Per ogni numero in `Blocked by:` del ticket, se il file di quel ticket esiste ancora il
+   ticket è aperto: fermati e dillo.
+2. **Bloccanti della card.** Se `Blocked by:` di `0-CARD.md` cita voci che esistono ancora in un registro, dillo.
+3. **Ramo.** Confronta `Ramo:` in `0-ORDER.md` dell'ordine della card con il ramo attivo del repository. Se sono
    diversi, dillo.
 
 Se l'operatore, avvisato, vuole procedere, si procede: l'avviso viene prima. Sui rami non si fa nessuna

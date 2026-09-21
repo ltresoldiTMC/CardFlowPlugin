@@ -15,8 +15,9 @@ Leggi `.WORKDIR` nella cartella di lavoro: una riga, togliendo spazi ed eventual
 è assoluto o la cartella non esiste, fermati e rimanda a `/cardflow:init`. Quel percorso è `<work>`. I modelli
 stanno in `${CLAUDE_PLUGIN_ROOT}/templates/`. Il repository è quello indicato nel blocco cardflow del `CLAUDE.md`.
 
-L'Id di una card si legge dal campo `Id:` del suo `0-CARD.md`, non dal nome della cartella: la card `260916` è
-quella il cui `<work>/cards/260916-*/0-CARD.md` porta `Id: 260916`.
+Una card si indica con l'Id o con il nome intero della cartella. Se in `<work>/cards/` esiste una cartella con quel
+nome esatto, è quella; altrimenti è la cartella `<valore>-*` il cui `0-CARD.md` porta `Id: <valore>`. La card
+`26258KD`, per esempio, è `<work>/cards/26258KD-pdf-export/`.
 
 ## Passi
 

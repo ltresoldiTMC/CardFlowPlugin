@@ -76,11 +76,12 @@ Una skill con `disable-model-invocation: true` la lancia soltanto l'operatore: i
 nessuna skill può richiamarne un'altra. È il motivo per cui le skill di Matt si lanciano a mano.
 
 **Conseguenza.** Una skill per azione, con il nome `<oggetto>-<azione>` e solo i parametri come argomenti:
-`/cardflow:card-done 260916`, `/cardflow:order-close CR0412`. Ogni azione ha la sua descrizione e il suo
+`/cardflow:card-done 26258KD`, `/cardflow:order-close CR0412`. Ogni azione ha la sua descrizione e il suo
 suggerimento di argomenti, carica solo le proprie istruzioni, e decide da sé se il modello può lanciarla. I comandi
 si scrivono sempre con il prefisso, così le skill possono chiamarsi `init` e `help` anche se `/init` e `/help` sono
-comandi di Claude Code. Il modello può lanciare `help`, `card-list` e `card-done`, quest'ultima perché dopo il «sì»
-a «Procediamo con la review e chiudiamo?» l'agente avvii da sé la chiusura; le altre le lancia solo l'operatore.
+comandi di Claude Code. Il modello può lanciare `help`, `card-list`, `open-points` e `card-done`: le prime tre rispondono
+a domande come «dimmi i punti aperti», l'ultima perché dopo il «sì» a «Procediamo con la review e chiudiamo?»
+l'agente avvii da sé la chiusura. Le altre le lancia solo l'operatore.
 
 Fonte: [skills](https://code.claude.com/docs/en/skills).
 
@@ -95,3 +96,17 @@ che resta l'unica versione del testo.
 
 Fonti: [skills](https://code.claude.com/docs/en/skills),
 [plugins-reference](https://code.claude.com/docs/en/plugins-reference).
+
+## 0.7 — Versione e aggiornamenti
+
+Se `plugin.json` dichiara `version`, un plugin installato da git resta a quella versione: i commit nuovi non
+arrivano finché il numero non cambia. Senza `version`, per le sorgenti git la versione è lo SHA del commit, e ogni
+commit pubblicato è un aggiornamento. La documentazione indica questa seconda strada come la più semplice per un
+plugin in sviluppo. Un plugin caricato da una cartella locale non è mai fermato dalla versione.
+
+**Conseguenza.** `plugin.json` non dichiara `version`. Chi usa il plugin lo aggiorna aggiornando il marketplace:
+dal pannello `/plugins` dell'estensione di VS Code, scheda *Marketplaces*, oppure con
+`/plugin marketplace update cardflow`.
+
+Fonti: [plugin-marketplaces](https://code.claude.com/docs/en/plugin-marketplaces),
+[VS Code](https://code.claude.com/docs/en/vs-code).

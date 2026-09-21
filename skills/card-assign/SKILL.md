@@ -15,9 +15,9 @@ Card: `$card`. Ordine: `$order`; `-` vuol dire nessun ordine. Se manca uno dei d
 Leggi `.WORKDIR` nella cartella di lavoro: una riga, togliendo spazi ed eventuale BOM. Se manca, se il percorso non
 è assoluto o la cartella non esiste, fermati e rimanda a `/cardflow:init`. Quel percorso è `<work>`.
 
-L'Id di una card si legge dal campo `Id:` del suo `0-CARD.md`, non dal nome della cartella: la card `260916` è
-quella il cui `<work>/cards/260916-*/0-CARD.md` porta `Id: 260916`. Lo stesso vale per gli ordini e il loro
-`0-ORDER.md`.
+Una card o un ordine si indicano con l'Id o con il nome intero della cartella. Se esiste una cartella con quel nome
+esatto, è quella; altrimenti è la cartella `<valore>-*` la cui intestazione (`0-CARD.md`, `0-ORDER.md`) porta
+`Id: <valore>`. La card `26258KD`, per esempio, è `<work>/cards/26258KD-pdf-export/`.
 
 ## Passi
 

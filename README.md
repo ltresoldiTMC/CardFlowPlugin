@@ -40,19 +40,23 @@ flowchart TD
     D -->|ordine finito| X["/cardflow:order-close"]
 ```
 
-1. `/cardflow:order-new` apre un ordine con Id, titolo, ramo e criteri di accettazione.
-2. `/cardflow:card-new` crea una card. Senza ordine resta nel backlog: puoi farne il grilling, non la spec.
+1. `/cardflow:order-new CR0412` apre un ordine con il numero della CR, titolo, ramo e criteri di accettazione. Senza
+   numero, l'Id lo genera il plugin.
+2. `/cardflow:card-new` crea una card, con un Id generato come `26258KD`: anno, giorno dell'anno e ora in lettere,
+   così le card si ordinano da sole. Senza ordine resta nel backlog: puoi farne il grilling, non la spec.
 3. Nella stessa conversazione lanci `/mattpocock-skills:grill-with-docs`, `/mattpocock-skills:to-spec` e
    `/mattpocock-skills:to-tickets`, poi `/clear`.
-4. Implementi un ticket per conversazione con `/mattpocock-skills:implement 260916/01`, poi `/clear`. Prima di
+4. Implementi un ticket per conversazione con `/mattpocock-skills:implement 26258KD/01`, poi `/clear`. Prima di
    cominciare l'agente ti avvisa se un bloccante è ancora aperto o se sei su un ramo diverso da quello dell'ordine.
    Alla fine rivede il lavoro, annota in fondo alla spec dove si è discostato e ti propone una riga di commit in
    inglese. Il commit lo fai tu; quando glielo dici, cancella il ticket.
 5. Dopo l'ultimo ticket l'agente chiede «Procediamo con la review e chiudiamo?». Se rispondi sì, parte
-   `/cardflow:card-done 260916`: un agente rivede la card intera, tu scegli che cosa correggere e confermi che cosa
+   `/cardflow:card-done 26258KD`: un agente rivede la card intera, tu scegli che cosa correggere e confermi che cosa
    sale nei registri, e la card finisce nell'archivio dell'ordine con un handover.
 6. `/cardflow:order-close CR0412` verifica i criteri, ti chiede che cosa fare delle card rimaste e porta i registri
    nel progetto.
 
-In qualunque momento `/cardflow:card-list` elenca le card aperte, e `/cardflow:card-assign <card-id> <order-id>`
-assegna a un ordine una card ancora nel backlog.
+In qualunque momento `/cardflow:card-list` elenca le card aperte con i loro bloccanti, `/cardflow:open-points` i
+punti aperti (anche solo di un ordine o di una card), e `/cardflow:card-assign <card-id> <order-id>` assegna a un
+ordine una card ancora nel backlog. Dove serve un Id puoi dare anche il nome della cartella, per esempio
+`26258KD-pdf-export`. Come sono fatti gli Id e i codici lo spiega [`manual/identifiers.md`](manual/identifiers.md).

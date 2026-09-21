@@ -16,7 +16,9 @@ Leggi `.WORKDIR` nella cartella di lavoro: una riga, togliendo spazi ed eventual
 è assoluto o la cartella non esiste, fermati e rimanda a `/cardflow:init`. Quel percorso è `<work>`. I modelli
 stanno in `${CLAUDE_PLUGIN_ROOT}/templates/`.
 
-L'Id di un ordine o di una card si legge dal campo `Id:` della sua intestazione, non dal nome della cartella.
+Un ordine o una card si indicano con l'Id o con il nome intero della cartella. Se esiste una cartella con quel nome
+esatto, è quella; altrimenti è la cartella `<valore>-*` la cui intestazione (`0-ORDER.md`, `0-CARD.md`) porta
+`Id: <valore>`.
 
 ## Passi
 

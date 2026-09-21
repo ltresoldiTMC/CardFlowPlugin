@@ -22,7 +22,7 @@ cardflow non le sostituisce, aggiunge il livello sopra, che loro non conoscono.
 |---|---|---|---|
 | **Progetto** | quello che resta vero oltre ogni ordine: termini, decisioni in vigore, vincoli, migliorie, punti aperti, conoscenza dei sistemi esterni | — | quanto il progetto |
 | **Ordine** | un impegno: una CR o una release. Dice che cosa fare, con quali criteri, su quale ramo | `CR0412-invoice-export`, `V2.0.0-release` | settimane o mesi; a fine vita resta, chiuso |
-| **Card** | un blocco di sviluppo: nasce da un'idea, passa per il grilling, diventa spec e ticket, si chiude con una revisione | `260916-pdf-export` | giorni; alla chiusura si comprime nell'archivio dell'ordine |
+| **Card** | un blocco di sviluppo: nasce da un'idea, passa per il grilling, diventa spec e ticket, si chiude con una revisione | `26258KD-pdf-export` | giorni; alla chiusura si comprime nell'archivio dell'ordine |
 
 Sotto la card ci sono i **ticket** di Matt: fette implementabili in una sessione, cancellate quando sono fatte.
 
@@ -55,10 +55,10 @@ perimetro.
       5-DELIVERY.md                  raro, solo se chiesto alla chiusura
       sources/                       file del cliente per quest'ordine, sola lettura
       archive/
-        260916-pdf-export/
+        26258KD-pdf-export/
           5-HANDOVER.md
   cards/
-    260916-pdf-export/
+    26258KD-pdf-export/
       0-CARD.md
       1-SPEC.md                      scritto da /mattpocock-skills:to-spec
       2-OPEN-POINTS.md               se serve
@@ -97,8 +97,13 @@ numero dà anche l'ordine di lettura dall'alto in basso.
 
 ## Identificativi e intestazioni
 
-**Ordine.** L'identificativo viene da fuori: il numero della CR o il nome della release. La cartella è
-`<id>-<slug>`.
+Ordini e card hanno lo stesso tipo di Id, in uno spazio di nomi solo. L'Id si può dare, come il numero di una CR,
+oppure lo genera il plugin: due cifre dell'anno, il giorno dell'anno e due lettere per l'ora, tutto in UTC, per
+esempio `26264VV`. Gli Id generati si ordinano da soli nell'ordine di creazione. La cartella è `<id>-<slug>`.
+Come nascono gli Id, come si leggono e come si citano, insieme ai codici delle voci dei registri, lo spiega
+[`identifiers.md`](identifiers.md).
+
+**Ordine.** L'Id di solito viene da fuori: il numero della CR o il nome della release.
 
 ```text
 Id: CR0412
@@ -109,16 +114,16 @@ Ramo: cr0412-invoices
 
 `Stato` vale `OPEN` o `DONE`. Il ramo è scritto **solo qui**: le card dell'ordine lo ereditano.
 
-**Card.** L'identificativo è la data di creazione, `YYMMdd`; dalla seconda card dello stesso giorno si aggiunge un
-suffisso: `260916`, `260916-2`. La cartella è `<id>-<slug>`.
+**Card.** L'Id di solito lo genera `/cardflow:card-new`.
 
 ```text
-Id: 260916
+Id: 26258KD
 Titolo: Esportazione in PDF
 Stato: BACKLOG
 Priorità: alta
 Ordine: CR0412
 Base:
+Blocked by: C3 (formato delle date accettato dal gestionale)
 ```
 
 | Campo | Valori e regole |
@@ -127,48 +132,52 @@ Base:
 | `Priorità` | `alta`, `media`, `bassa`. A parità vince l'Id più vecchio |
 | `Ordine` | vuoto vuol dire backlog libero. **Si cambia solo finché la card è in `BACKLOG`** |
 | `Base` | il commit da cui parte il lavoro. Lo scrive il primo ticket, non prima: fra la nascita della card e il primo ticket possono passare giorni, e altri commit finirebbero nella revisione |
+| `Blocked by` | le voci di registro che tengono ferma la card, con codice e titolo; vuoto se nessuna. Una voce blocca finché esiste: risolta, si cancella dal registro e il blocco sparisce. È lo stesso meccanismo dei ticket |
 
-Nel backlog, sotto l'intestazione di `0-CARD.md` stanno due righe sull'idea. Quando nasce `1-SPEC.md`,
-l'intestazione resta e le due righe si possono togliere.
+Una card nel backlog è una bozza: un lavoro deciso, di cui si sa che si farà ma non ancora quando. Sotto
+l'intestazione di `0-CARD.md` stanno due righe sull'idea. Quando nasce `1-SPEC.md`, l'intestazione resta e le due
+righe si possono togliere.
 
-Una card o un ordine **si citano per Id**, mai per percorso: una card chiusa cambia cartella, l'Id resta. L'Id si
-legge dall'intestazione, non dal nome della cartella.
+Una card o un ordine **si citano per Id**, mai per percorso: una card chiusa cambia cartella, l'Id resta. Nei
+documenti l'Id va con il titolo, «`26258KD` (esportazione in PDF)»; nei comandi si può passare l'Id o il nome intero
+della cartella. L'Id vero è quello dell'intestazione, non quello che si ricava dal nome della cartella.
 
 **Codici delle voci.** I punti aperti e le decisioni hanno un codice: `T` per i punti tecnici, `C` per quelli del
-cliente, `D` per le decisioni. Il codice è unico in tutto il progetto, perché il prossimo è il più alto già usato
-in `project/` e in ogni ordine, più uno; e non cambia quando la voce sale dall'ordine al progetto. I punti aperti
-della card non hanno codice: lo prendono quando salgono all'ordine. Glossario, vincoli e migliorie non hanno codice
-e si citano per titolo.
+cliente, `D` per le decisioni. È unico in tutto il progetto e non cambia quando la voce sale dall'ordine al progetto.
+Glossario, vincoli e migliorie non hanno codice e si citano per titolo. I dettagli sono in
+[`identifiers.md`](identifiers.md).
 
 ## Il percorso
 
 ### Aprire un ordine
 
-`/cardflow:order-new` chiede Id, slug, titolo e ramo; crea la cartella con `0-ORDER.md` e `1-SPEC.md` (che cosa
-fare e i criteri di accettazione) e, se ci sono, mette i file del cliente in `sources/`.
+`/cardflow:order-new [order-id]` usa l'Id passato, di solito il numero della CR, oppure ne genera uno; chiede slug,
+titolo e ramo; crea la cartella con `0-ORDER.md` e `1-SPEC.md` (che cosa fare e i criteri di accettazione) e, se ci
+sono, mette i file del cliente in `sources/`.
 
 ### Una card, dalla nascita alla chiusura
 
 | # | Passo | Che cosa succede |
 |---|---|---|
-| 1 | `/cardflow:card-new` | chiede titolo, priorità, ordine (anche nessuno) e due righe sull'idea. Crea `cards/<id>-<slug>/0-CARD.md` |
+| 1 | `/cardflow:card-new [card-id]` | genera l'Id se non è passato; chiede titolo, priorità, ordine (anche nessuno) e due righe sull'idea. Crea `cards/<id>-<slug>/0-CARD.md` |
 | 2 | `/mattpocock-skills:grill-with-docs` | intervista sulla card, anche se è nel backlog. Quello che emerge resta **nella card**: punti aperti in `2-OPEN-POINTS.md`, il resto in `.scratch/`. Nessun registro di progetto si tocca |
-| 3 | `/mattpocock-skills:to-spec` | **se la card non ha un ordine, chiede quale e si ferma** finché non lo riceve. Scrive `1-SPEC.md` |
+| 3 | `/mattpocock-skills:to-spec` | **se la card non ha un ordine, chiede quale e si ferma** finché non lo riceve; se la card ha bloccanti aperti, lo dice. Scrive `1-SPEC.md` |
 | 4 | `/mattpocock-skills:to-tickets` | scrive i ticket in `tickets/`, ciascuno con la riga `Blocked by:` |
 | — | `/clear` | i passi 2–4 stanno nella stessa conversazione; poi si svuota il contesto |
 | 5 | `/mattpocock-skills:implement <card-id>/01` | un ticket per conversazione, svuotando il contesto fra l'uno e l'altro. Vedi sotto |
 | 6 | dopo l'ultimo ticket | l'agente chiede **«Procediamo con la review e chiudiamo?»** e aspetta |
 | 7 | `/cardflow:card-done <card-id>` | la chiusura, vedi sotto. Dopo il «sì» del passo 6 la può avviare l'agente |
 
-`/cardflow:card-list` stampa in tabella le card aperte con stato, priorità, ordine, ramo e ticket rimasti, e segnala
-quelle in corso su un ramo diverso da quello attivo. `/cardflow:card-assign <card-id> <order-id>` assegna a un
-ordine una card in `BACKLOG`; con `-` al posto dell'ordine la riporta nel backlog libero.
+`/cardflow:card-list` stampa in tabella le card aperte con stato, priorità, ordine, ramo, bloccanti aperti e ticket
+rimasti, e segnala quelle in corso su un ramo diverso da quello attivo. `/cardflow:open-points` elenca i punti
+aperti, i bloccanti per primi. `/cardflow:card-assign <card-id> <order-id>` assegna a un ordine una card in
+`BACKLOG`; con `-` al posto dell'ordine la riporta nel backlog libero.
 
 ### Un ticket
 
-Prima di cominciare, due controlli. Se un ticket citato in `Blocked by:` esiste ancora, è aperto: ci si ferma e lo
-si dice. Se il ramo attivo non è quello dell'ordine, lo si dice. In entrambi i casi, se l'operatore vuole procedere
-si procede, ma l'avviso viene prima.
+Prima di cominciare, tre controlli. Se un ticket citato in `Blocked by:` esiste ancora, è aperto: ci si ferma e lo
+si dice. Se la card ha bloccanti aperti nella sua intestazione, lo si dice. Se il ramo attivo non è quello
+dell'ordine, lo si dice. In tutti i casi, se l'operatore vuole procedere si procede, ma l'avviso viene prima.
 
 Il primo ticket della card scrive `Base:` e porta la card a `DOING`.
 
@@ -269,6 +278,16 @@ I punti per il cliente sono scritti per chi risponde senza conoscere il codice: 
 possibili con la loro conseguenza, che cosa resta fermo nel frattempo. Citano il codice del punto tecnico da cui
 nascono, e una risposta li chiude insieme a lui.
 
+Fuori da una card, un punto si annota chiedendolo: «annota come punto aperto: …». Si leggono con
+`/cardflow:open-points`, tutti o quelli di un ordine o di una card, i bloccanti per primi e con le card che ciascuno
+tiene ferme.
+
+**Una verifica ancora da fare è anche un punto aperto.** Una verifica che non scrive codice, come una prova a
+schermo, non è una card: è un criterio di accettazione in `1-SPEC.md` dell'ordine, e `/cardflow:order-close` lo
+controlla. Finché non è fatta, è anche un punto aperto tecnico dell'ordine, per esempio «`T4` — Smoke a schermo non
+eseguito», così compare fra i punti aperti senza aspettare la chiusura. Fatta la verifica, la voce si cancella. Un
+difetto che la verifica trova diventa una card, o una correzione di una sessione sola.
+
 ### Decisioni
 
 Una voce entra in `4-DECISIONS` solo se risponde a tre domande:
@@ -349,6 +368,7 @@ altro.
 - **Il plugin `superpowers` spento** nei progetti che usano cardflow, perché il suo hook di avvio impone un metodo
   concorrente. `/cardflow:init` lo spegne nel progetto se lo trova installato.
 - **Un repository git** per il codice. Senza, la revisione di chiusura non ha una differenza da leggere.
+- **La shell bash**, per lo script che genera gli Id. Su Windows è quella di Git, che Claude Code usa già.
 - `/cardflow:init` eseguito una volta per progetto, e di nuovo dopo un aggiornamento del plugin: il permesso di
   lettura sui modelli segue la cartella in cui il plugin è installato.
 
@@ -360,12 +380,15 @@ I comandi si scrivono sempre con il prefisso `cardflow:`.
 |---|---|
 | `/cardflow:init` | configura il progetto: modalità (repository che ospita già i file per l'IA, oppure cartella `.ai/` separata), posizione di `.work`, permessi, struttura, file di configurazione delle skill di Matt, blocco nel `CLAUDE.md` |
 | `/cardflow:help [argomento]` | riassume comandi e giro di una card; con un argomento risponde su quel tema, dal manuale |
-| `/cardflow:order-new [order-id]` | apre un ordine |
+| `/cardflow:order-new [order-id]` | apre un ordine, con l'Id passato o con uno generato |
 | `/cardflow:order-close <order-id>` | chiude un ordine |
-| `/cardflow:card-new [order-id]` | crea una card, nell'ordine indicato o nel backlog libero |
-| `/cardflow:card-list` | elenca le card aperte |
+| `/cardflow:card-new [card-id]` | crea una card, con l'Id passato o con uno generato; l'ordine lo chiede |
+| `/cardflow:card-list` | elenca le card aperte, con i loro bloccanti |
 | `/cardflow:card-assign <card-id> <order-id>` | assegna a un ordine una card in `BACKLOG`; con `-` la riporta nel backlog libero |
 | `/cardflow:card-done <card-id>` | chiude una card |
+| `/cardflow:open-points [order-id \| card-id]` | elenca i punti aperti: tutti, oppure quelli di un ordine o di una card |
+
+Dove un comando chiede un Id, accetta anche il nome intero della cartella: `26258KD` o `26258KD-pdf-export`.
 
 Chi arriva da un metodo precedente non trova nel plugin niente per migrare: il plugin parte pulito. La migrazione
 dei progetti esistenti è una procedura a parte, fuori dal plugin.

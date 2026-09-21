@@ -8,7 +8,8 @@ il manuale.
   dedotto.
 - **Repository.** `{{REPO}}`. Il ramo attivo si legge con `git -C "{{REPO}}" branch --show-current`.
 - **Livelli.** `project/` per quello che vale sempre, `orders/<id>-<slug>/` per un impegno con il suo ramo,
-  `cards/<id>-<slug>/` per un blocco di sviluppo. Card e ordini si citano per Id, mai per percorso.
+  `cards/<id>-<slug>/` per un blocco di sviluppo. Card, ordini e voci dei registri si citano per Id o codice con il
+  titolo accanto, mai per percorso. Gli Id nuovi li genera lo script del plugin, mai un calcolo a mente.
 - **Ticket.** Prima di implementarne uno, e per chiuderlo, si segue `docs/agents/issue-tracker.md`, sezioni
   *Prima di un ticket* e *Chiudere un ticket*.
 - **Registri** (`2-`, `3-`, `4-`, `6-`, `7-`, `8-`). Si scrivono solo a `/cardflow:card-done` e a
