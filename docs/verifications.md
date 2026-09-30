@@ -76,12 +76,13 @@ Una skill con `disable-model-invocation: true` la lancia soltanto l'operatore: i
 nessuna skill può richiamarne un'altra. È il motivo per cui le skill di Matt si lanciano a mano.
 
 **Conseguenza.** Una skill per azione, con il nome `<oggetto>-<azione>` e solo i parametri come argomenti:
-`/cardflow:card-done 26258KD`, `/cardflow:order-close CR0412`. Ogni azione ha la sua descrizione e il suo
+`/cardflow:card-done 26258KD`, `/cardflow:branch-close feature/cr0412`. Ogni azione ha la sua descrizione e il suo
 suggerimento di argomenti, carica solo le proprie istruzioni, e decide da sé se il modello può lanciarla. I comandi
 si scrivono sempre con il prefisso, così le skill possono chiamarsi `init` e `help` anche se `/init` e `/help` sono
-comandi di Claude Code. Il modello può lanciare `help`, `card-list`, `open-points` e `card-done`: le prime tre rispondono
-a domande come «dimmi i punti aperti», l'ultima perché dopo il «sì» a «Procediamo con la review e chiudiamo?»
-l'agente avvii da sé la chiusura. Le altre le lancia solo l'operatore.
+comandi di Claude Code. Il modello può lanciare `help`, `journal`, `branch-plan`, `open-points`, `status` e
+`card-done`: le prime cinque rispondono a richieste come «dimmi i punti aperti», «annota nel diario» o «quali card
+servono?», e scrivono solo dopo una conferma o non scrivono affatto; l'ultima perché dopo il «sì» a «Procediamo con la review e chiudiamo?» l'agente avvii da sé la
+chiusura. Le altre le lancia solo l'operatore.
 
 Fonte: [skills](https://code.claude.com/docs/en/skills).
 
@@ -110,3 +111,64 @@ dal pannello `/plugins` dell'estensione di VS Code, scheda *Marketplaces*, oppur
 
 Fonti: [plugin-marketplaces](https://code.claude.com/docs/en/plugin-marketplaces),
 [VS Code](https://code.claude.com/docs/en/vs-code).
+
+## 0.8 — Il controllo del merge in sola lettura
+
+`git merge-base --is-ancestor <A> <B>` esce con 0 se `A` è un antenato di `B`, con 1 se non lo è, e non scrive
+niente. Dopo un merge normale o un *fast-forward* i commit del branch sono antenati del branch che li ha ricevuti, e il
+controllo riesce. Dopo uno *squash* o un *rebase and merge* i commit che arrivano sono nuovi, con altri SHA, e il
+controllo fallisce anche a merge fatto; lo stesso succede se il branch è stato cancellato, perché il suo nome non si
+risolve più. I riferimenti sono quelli locali: un merge fatto solo sul server non si vede finché l'operatore non
+aggiorna la copia locale.
+
+**Conseguenza.** Il passo 3 di `branch-close`: se il controllo sul branch fallisce, la skill chiede il commit di merge
+o la pull request e ripete il controllo su quel commit. cardflow non esegue `fetch` né `pull`.
+
+La risposta viene dalla documentazione; la prova pratica, con uno *squash* e con un branch cancellato, è nel passo 10
+della prova sul progetto giocattolo.
+
+Fonte: [git-merge-base](https://git-scm.com/docs/git-merge-base).
+
+## 0.9 — `to-spec` e l'intestazione della card
+
+`/mattpocock-skills:to-spec`, nella versione 1.2.3, non scrive un file da sé: compone la spec e la «pubblica sul
+tracker», cioè segue le istruzioni di `docs/agents/issue-tracker.md`. Chi scrive il file è quindi l'agente, con le
+regole di cardflow. Il rischio è che l'agente usi Write, che riscrive il file intero e perde l'intestazione.
+
+**Conseguenza.** `issue-tracker.md` chiede di aggiungere la spec con Edit, sotto la riga `---` che chiude
+l'intestazione, e vieta Write su `SPEC.md`. La prova pratica è nel passo 4 della prova sul progetto giocattolo; se
+l'intestazione si perde lo stesso, l'agente la rimette subito dopo la scrittura.
+
+Fonte: il testo della skill, `skills/engineering/to-spec/SKILL.md` del plugin `mattpocock-skills` 1.2.3.
+
+## 0.10 — I commit della card dopo un merge
+
+`git log --first-parent` segue solo il primo genitore di ogni merge, cioè la storia del branch su cui si lavora, e
+`--no-merges` toglie i commit di merge. Su un branch che riceve il branch principale a metà card,
+`git log --first-parent --no-merges <base>..HEAD` elenca quindi solo i commit fatti sul branch: quelli arrivati con il
+merge stanno sul secondo genitore e restano fuori, e con loro la risoluzione dei conflitti, che vive nel commit di
+merge. Con `-p` ogni commit mostra la sua differenza rispetto al primo genitore, cioè il lavoro della card.
+
+**Conseguenza.** Il punto 5 di `prompts/closure-review.md`. Un *rebase* a metà card riscrive i commit e può togliere
+`BASE` dalla storia del branch: in quel caso `git rev-parse <BASE>` non basta più a dire che la base è giusta, e
+`card-done` chiede da quale commit partire.
+
+La risposta viene dalla documentazione; la prova pratica è nel passo 9 della prova sul progetto giocattolo.
+
+Fonte: [git-log](https://git-scm.com/docs/git-log).
+
+## 0.11 — Gli script nella bash di Git per Windows
+
+Provato il 29 settembre 2026 con GNU bash 5.2.26 (msys), GNU grep 3.0, GNU Awk 5.0.0 e Git 2.45.1 per Windows, facendo
+girare `scripts/new-id.test.sh` e `scripts/work.test.sh`: tutti i casi passano.
+
+- `grep -w` e `grep -Fqw` trovano un codice o un Id come parola intera, e `grep -rqw --exclude-dir=notes` salta la
+  cartella delle note.
+- Con `LC_ALL=C` il confronto delle stringhe di bash segue l'ordine dei byte, quindi le maiuscole vengono prima delle
+  minuscole e i codici si ordinano per data di nascita. Senza, con una lingua diversa da C, le minuscole si mescolano
+  alle maiuscole.
+- `${nome,,}` porta a minuscolo i nomi delle cartelle, e così lo script trova due cartelle che differiscono solo per le
+  maiuscole.
+- Awk legge il trattino lungo dei titoli `### <codice> — <titolo>` come sequenza di byte, anche con `LC_ALL=C`.
+
+**Conseguenza.** Gli script della v2 fissano `LC_ALL=C` e si provano con le loro prove prima di ogni pubblicazione.

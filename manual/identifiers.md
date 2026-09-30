@@ -1,17 +1,13 @@
 # cardflow — identificativi
 
-cardflow dà un nome a quattro cose: gli ordini, le card, i ticket e le voci dei registri. Questa pagina dice come
-nasce ciascun identificativo, come si legge e come si cita.
+cardflow dà un nome a quattro cose: le card, i ticket, i branch e le voci dei registri. Questa pagina dice come nasce
+ciascun identificativo, come si legge e come si cita.
 
-## Ordini e card
+## Le card
 
-Ordini e card usano lo stesso identificativo e lo stesso spazio di nomi: una card e un ordine non hanno mai lo
-stesso Id, quindi un Id da solo basta a dire di chi si parla.
-
-L'Id si può **dare**, oppure lo **genera** il plugin. Un ordine di solito lo porta da fuori: il numero della CR
-(`CR2606`) o il nome della release (`V1.0.0-ALPHA`), e lo si passa a `/cardflow:order-new`. Una card di solito se
-lo fa generare da `/cardflow:card-new`, ma accetta anche un Id scelto. In entrambi i casi il plugin controlla che
-sia libero prima di usarlo.
+L'Id di una card di solito lo **genera** `/cardflow:card-new`; si può anche **dare**, come secondo argomento, quando
+viene da fuori, per esempio il numero di una richiesta: `/cardflow:card-new main CR2606`. In entrambi i casi il plugin
+controlla che sia libero prima di usarlo.
 
 ### L'Id generato
 
@@ -37,17 +33,18 @@ L'Id è fatto così per quattro ragioni:
 
 - **si ordina da solo.** Tutti gli Id generati hanno la stessa lunghezza, e dopo la data vengono solo lettere in
   ordine alfabetico. L'ordine alfabetico coincide quindi con quello di creazione, anche in Esplora risorse e in VS
-  Code, che leggono le cifre come numeri: una cifra subito dopo la data si fonderebbe con lei e manderebbe la
-  cartella in fondo;
+  Code, che leggono le cifre come numeri: una cifra subito dopo la data si fonderebbe con lei e manderebbe il file in
+  fondo;
 - **la data si legge**: le prime cinque cifre dicono l'anno e il giorno;
 - **è corto**: sette caratteri, da dire a voce o da scrivere a mano;
-- **è sicuro su qualunque disco**: solo maiuscole, perché Windows non distingue `a` da `A` nei nomi delle cartelle.
+- **è sicuro su qualunque disco**: solo maiuscole, perché l'Id dà il nome agli handover e Windows non distingue `a`
+  da `A` nei nomi dei file.
 
 **Scartato.** La data `AAMMGG` con un suffisso `-2` per la seconda card del giorno, che dava lunghezze diverse. Un
 tempo Unix in base 36, illeggibile e da calcolare. Cifre dopo la data, che rompono l'ordinamento naturale. Un hash,
 che per costruzione disperde l'ordine. Lettere casuali, che perdono l'ordine fra le card dello stesso giorno.
 
-### Come nasce, e che cosa succede se è già preso
+### Come nasce, e quando è preso
 
 L'Id lo produce lo script `scripts/new-id.sh` del plugin, mai l'agente a mente: contare i giorni dell'anno e
 convertire un orario sono calcoli che un modello sbaglia.
@@ -57,10 +54,16 @@ bash scripts/new-id.sh <radice di .work>            # genera un Id libero
 bash scripts/new-id.sh <radice di .work> CR2606     # controlla un Id scelto e lo restituisce
 ```
 
-Un Id è preso quando esiste una cartella `<id>-<slug>` fra le card, fra gli ordini o negli archivi delle card
-chiuse. Se la fascia di adesso è presa, lo script passa alla successiva: l'Id resta unico e resta dopo quello già
-esistente, quindi l'ordine regge. Il caso capita solo con due card create a meno di tre minuti l'una dall'altra.
-Resta scoperto soltanto il caso di due sessioni che creano nello stesso istante, ed è trascurabile.
+Un Id è **preso** quando:
+
+- lo porta il campo `ID` di una card in corso, in `development/*/card/SPEC.md`;
+- esiste un handover con quell'Id, in `development/*/handovers/` (le card chiuse di un branch non ancora unito) o in
+  `deploy/handovers/*/` (le card chiuse già arrivate sul branch principale);
+- il diario lo cita. Il diario ricorda le card eliminate, che non hanno un handover: senza questo controllo, l'Id di
+  una card eliminata si potrebbe riprendere a mano.
+
+Se la fascia di adesso è presa, lo script passa alla successiva: l'Id resta unico e resta dopo quello già esistente,
+quindi l'ordine regge. Il caso capita solo con due card create a meno di tre minuti l'una dall'altra.
 
 Un Id scelto può contenere lettere, cifre, punti e trattini singoli; niente spazi e niente `/`. Lo script si
 verifica con `bash scripts/new-id.test.sh`.
@@ -70,65 +73,114 @@ creata poco dopo la mezzanotte porta la data del giorno prima.
 
 ### La cartella
 
-La cartella di un ordine o di una card è `<id>-<slug>`: `26264VV-certificate-numbering`, `CR2606-calendar`. Lo
-slug è breve, in inglese, con i trattini al posto degli spazi. L'Id vero è quello scritto nel campo `Id:`
-dell'intestazione, non quello che si ricava dal nome della cartella.
+La card sta sempre nella cartella `card/` del suo branch, e un branch ne ha al massimo una. L'Id vive solo nel campo
+`ID` dell'intestazione di `SPEC.md`: la card `26264VV` è la `development/*/card/` il cui `SPEC.md` porta
+`ID: 26264VV`. Quando la card si chiude, il suo handover prende il nome `<id>-<slug>.md`, con uno slug breve, in
+inglese, ricavato dal titolo: `26264VV-invoice-email.md`.
 
 ## Come si citano
 
-**Nei comandi** si passa l'Id oppure il nome intero della cartella: `/cardflow:card-done 26264VV` e
-`/cardflow:card-done 26264VV-certificate-numbering` fanno la stessa cosa.
+**Nei comandi** si passa l'Id della card oppure il branch: `/cardflow:card-done 26264VV` e
+`/cardflow:card-done feature/cr0412-invoices` fanno la stessa cosa, se la card è quella. Senza argomento vale il branch
+attivo.
 
-**Nei documenti** si scrivono l'Id e il titolo insieme: «`26264VV` (numerazione dei certificati)». Mai il
-percorso: una card chiusa cambia cartella, l'Id resta.
-
-**Non c'è gerarchia.** Una card non sta dentro il suo ordine: le card sono tutte in `cards/`, e l'ordine è il campo
-`Ordine:` dell'intestazione. Assegnare una card a un altro ordine cambia quella riga e nient'altro.
+**Nei documenti** si scrivono l'Id e il titolo insieme: «`26264VV` (invio delle fatture per email)». Mai il percorso:
+una card chiusa sparisce, e il suo Id resta nel diario e nel suo handover.
 
 ## Ticket
 
 Un ticket si cita `<card-id>/NN`: `26264VV/01` è il primo ticket della card `26264VV`. I numeri partono da `01`
 dentro `tickets/` della card, in ordine di dipendenza. È l'unico riferimento composto del metodo.
 
+## I branch
+
+Un branch non ha un Id: il suo nome è quello di git, e sta nel campo `BRANCH` della spec. La cartella ne deriva, con
+ogni `/` sostituito da `-`, e la trova lo script `work.sh branch-dir`. Nei comandi un branch si passa con il suo nome
+o con quello della sua cartella.
+
 ## Voci dei registri
 
-Le voci dei punti aperti e delle decisioni hanno un codice fatto di una lettera e di un numero:
+I punti tecnici, le domande e le migliorie hanno un codice. La lettera dice il tipo della voce, non il file in cui sta:
+una voce che sale dal registro di un branch a quello comune tiene il suo codice.
 
-| Lettera | Voce | Registro |
+| Famiglia | Voce | Registro |
 |---|---|---|
-| `T` | punto aperto tecnico | `2-OPEN-POINTS-TECHNICAL.md` |
-| `C` | punto aperto per il cliente | `3-OPEN-POINTS-CLIENT.md` |
-| `D` | decisione | `4-DECISIONS.md` |
+| `T` | punto tecnico | `control/open-points-technical.md`, o quello di un branch |
+| `Q` | domanda a chi sta fuori | `control/open-points-client.md` |
+| `MP` | miglioria di prodotto | `control/improvements.md` |
+| `MS` | miglioria di sistema | `control/improvements.md` |
 
-La lettera dice il tipo della voce, non il livello. Il livello lo dice il file in cui la voce sta in quel momento:
-il progetto (`project/`) o un ordine (`orders/<id>-<slug>/`). Il codice non cambia quando la voce sale
-dall'ordine al progetto, alla chiusura dell'ordine: se contenesse il livello, ogni citazione si romperebbe.
+Decisioni, vincoli e termini non hanno codice: stanno nei documenti del repository e si citano per titolo. I punti
+aperti di una card non hanno codice: lo prendono quando la card si chiude.
 
-Il codice è unico in tutto il progetto: il prossimo è il numero più alto già usato con quella lettera, in
-`project/` e in ogni ordine, più uno. I punti aperti di una card non hanno codice: lo prendono quando salgono
-all'ordine. Glossario, vincoli e migliorie non hanno codice e si citano per titolo.
+### La forma
 
-Un progetto arrivato da un metodo precedente può conservare codici con altre lettere, perché altri documenti li
-citano. Il commento in testa al registro ne dà la legenda.
+```text
+Q26272Kb
+│└┬┘└┬┘└┴─ ora del giorno, in una di 2116 fasce di circa 41 secondi
+│ │  └──── giorno dell'anno, 001–366
+│ └─────── anno, due cifre
+└───────── famiglia
+```
 
-Come le card, una voce si cita con il codice e il titolo: «`I16` (che cosa codifica il prefisso del numero di
-certificato)». Il codice da solo non dice niente a chi legge.
+Le due lettere vengono da un alfabeto di 46: le stesse 23 maiuscole degli Id delle card, seguite dalle 23 minuscole
+senza `i`, `l` e `o`. La fascia è `prima lettera × 46 + seconda lettera`. Per leggere `Q26272Kb`: una domanda nata il
+29 settembre 2026, nella fascia `9 × 46 + 24 = 438`, che cominciava alle 04:58:04 UTC.
+
+Le minuscole portano la precisione a circa 41 secondi senza allungare il codice. Stanno solo nei codici, e non negli Id
+delle card, perché un codice non dà mai il nome a un file o a una cartella. Le maiuscole vengono prima delle
+minuscole, come nell'ordine dei byte, quindi i codici si ordinano per data di nascita.
+
+**Le maiuscole contano**: `Q26272Kb` e `Q26272KB` sono due codici diversi. Quando una skill trova citato un codice
+che non esiste, cerca quello che differisce solo per le maiuscole e lo propone: «forse intendevi `Q26272Kb`?». Così un
+errore di copiatura non passa in silenzio.
+
+### Unico per costruzione
+
+Il codice lo genera lo script, mai l'agente a mente:
+
+```bash
+bash scripts/new-id.sh <radice di .work> --code Q        # una domanda
+bash scripts/new-id.sh <radice di .work> --code T 3      # tre punti tecnici, in fasce consecutive
+```
+
+Un codice è preso quando compare esatto, come parola intera, in un file di `.work` fuori da `notes/`, e in quel caso
+lo script passa alla fascia successiva. Una voce chiusa sparisce dal suo registro, ma il diario la ricorda, quindi il
+suo codice resta preso. Poiché la data sta dentro il codice, un codice non torna mai, e non serve nessuna regola sul
+riuso. Una chiusura che crea più voci chiede tutti i codici in una volta.
+
+### I codici di un metodo precedente
+
+Un progetto che arriva da un metodo precedente converte i suoi codici alla migrazione: ogni voce prende un codice
+nuovo dallo script, e ogni citazione si corregge in tutto `.work`, fuori da `notes/` e dai documenti di altri. La
+sostituzione cerca il codice come parola intera, perché `Q1` non deve colpire `Q10`. La voce di diario della
+migrazione conserva la corrispondenza fra codici vecchi e nuovi, per chi ritrova un codice vecchio in un appunto o in
+una mail. Da quel momento nel progetto esiste una forma sola.
+
+### Come si citano
+
+Una voce si cita sempre con il codice e il titolo: «`Q26255Kb` (formato delle date accettato dal gestionale)». Il
+codice serve a ritrovare la voce, il titolo a capirla. Vale anche nel diario e nei campi dell'intestazione.
 
 ## Blocked by
 
 Il meccanismo viene dai ticket. Ogni ticket ha la riga `Blocked by:` con i ticket che devono chiudersi prima, e un
 bloccante è aperto finché il suo file esiste: chiuso il ticket, il file si cancella e il blocco sparisce da solo.
 
-Una card usa la stessa riga, nell'intestazione di `0-CARD.md`, con i codici e i titoli delle voci di registro che
-la tengono ferma:
+Una card usa lo stesso meccanismo nel campo `BLOCKED BY` della sua intestazione, con i codici e i titoli dei punti
+aperti che la tengono ferma, separati da virgole:
 
 ```text
-Blocked by: I16 (che cosa codifica il prefisso del numero di certificato)
+BLOCKED BY: Q26255Kb (formato delle date accettato dal gestionale)
 ```
 
-La logica è la stessa, perché nei registri una voce risolta si cancella: il blocco resta aperto finché la voce con
-quel codice esiste in un registro, e sparisce quando la voce se ne va. Vuoto vuol dire che la card può procedere.
+Una voce del backlog fa lo stesso con la nota `Bloccato da:`, e quando `card-new` la prende la nota diventa il campo
+`BLOCKED BY` della card.
 
-`/cardflow:card-list` mostra i bloccanti ancora aperti di ogni card, e `/cardflow:open-points` dice, per ogni voce,
-quali card tiene ferme. Prima della spec e prima di un ticket l'agente avvisa se la card ha bloccanti aperti; se
-l'operatore vuole procedere si procede, ma l'avviso viene prima.
+La logica è la stessa, perché nei registri una voce risolta si cancella: il blocco resta aperto finché esiste un
+titolo `### <codice> —` in un registro dei punti aperti, di `control/` o di un branch, e sparisce quando la voce se ne
+va. Vuoto vuol dire che la card può procedere.
+
+`/cardflow:status` mostra i bloccanti ancora aperti della card e del backlog di un branch, e `/cardflow:open-points`
+dice, per ogni voce, che cosa tiene fermo. Prima della spec e prima di un ticket l'agente avvisa se la card ha
+bloccanti aperti; se l'operatore vuole procedere si procede, ma l'avviso viene prima.

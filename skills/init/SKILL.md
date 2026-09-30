@@ -1,14 +1,14 @@
 ---
 name: init
-description: Configura un progetto per cardflow. Chiede la modalità, fissa la radice di .work, scrive permessi, struttura, file per le skill di Matt e blocco nel CLAUDE.md. Idempotente. Si lancia una volta per progetto, e di nuovo dopo un aggiornamento del plugin.
+description: Configura un progetto per cardflow. Chiede la modalità, il repository, il branch principale, la lingua e i percorsi dei documenti del repository e la radice di .work, e scrive permessi, file per le skill di Matt e blocco nel CLAUDE.md. Idempotente. Si lancia una volta per progetto, e di nuovo dopo un aggiornamento del plugin.
 disable-model-invocation: true
 ---
 
 # /cardflow:init
 
 Configura per cardflow il progetto della cartella di lavoro attuale. **Idempotente**: rilanciato, adotta quello che
-trova e non cambia nulla che sia già giusto. Non crea mai una cartella che esiste già. Nessuna operazione git che
-scrive.
+trova e non cambia nulla che sia già giusto. Non crea cartelle dentro `.work`: nessuna nasce in anticipo. Nessuna
+operazione git che scrive.
 
 I modelli stanno in `${CLAUDE_PLUGIN_ROOT}/templates/`.
 
@@ -21,8 +21,8 @@ Chiedila sempre, senza dedurla:
 
 - **nel repository**: il repository ospita già i file per l'IA (`CLAUDE.md`, `.claude/`), e la cartella di lavoro
   è la sua radice;
-- **cartella `.ai/` separata**: il repository resta pulito; la cartella di lavoro è una `.ai/` accanto al
-  repository, e tutti i file per l'IA stanno lì.
+- **cartella `.ai/` separata**: i file per l'IA stanno in una `.ai/` accanto al repository, che diventa la cartella di
+  lavoro.
 
 Controlla che la cartella di lavoro sia coerente con la risposta, con `git rev-parse --show-toplevel` in sola
 lettura. Nel repository, la cartella di lavoro deve esserne la radice. Con la cartella separata, la cartella di
@@ -32,17 +32,40 @@ lavoro non deve stare dentro un repository. Se non torna, fermati e dillo.
 
 Nel repository, è la cartella di lavoro. Con la cartella separata, chiedi il percorso assoluto del repository e
 verifica con `git -C <percorso> rev-parse --show-toplevel` che ne sia la radice. Se non è un repository git,
-avvisa: la revisione di chiusura di una card non avrà una differenza da leggere. Il percorso finisce nel blocco del
+fermati: cardflow ha bisogno di un branch principale e dei commit da rivedere. Il percorso finisce nel blocco del
 `CLAUDE.md`.
 
-## 3. Radice di `.work/`
+## 3. Branch principale
+
+Proponi il branch a cui punta `git -C <repository> symbolic-ref --short refs/remotes/origin/HEAD`, senza `origin/`; se
+non c'è un remoto, il branch attivo, `git -C <repository> branch --show-current`. Chiedi conferma e verifica che esista
+con `git -C <repository> rev-parse --verify <branch>`. Finisce nel blocco del `CLAUDE.md`.
+
+## 4. Documenti del repository
+
+L'architettura, il glossario, le decisioni e i vincoli stanno nel repository, perché servono a chi mantiene il codice e
+seguono il branch con git. Valgono in tutte e due le modalità: sono documenti di progetto, non file per l'IA.
+
+- **La lingua.** Proponila guardando il `README`, i documenti e i commenti del repository, e chiedi conferma.
+- **I percorsi**, relativi alla radice del repository. Se il repository ha già un documento di architettura, un
+  glossario, un registro delle decisioni o dei vincoli, proponi quelli; altrimenti `docs/architecture.md`,
+  `docs/glossary.md`, `docs/decisions.md` e `docs/constraints.md`. Chiedi conferma.
+
+Non creare i file: nascono alla prima chiusura che ha qualcosa da scriverci. Lingua e percorsi finiscono nel blocco del
+`CLAUDE.md`.
+
+## 5. Radice di `.work/`
 
 Se `.WORKDIR` esiste, leggine il percorso togliendo gli spazi, un eventuale BOM iniziale e i separatori
 raddoppiati, e chiedi conferma. Altrimenti chiedi il percorso assoluto: mai un default relativo. La radice deve
 stare **fuori dal repository**. Se la cartella esiste la adotti; se non esiste la crei, dopo conferma. `.WORKDIR`
-non si scrive ancora: lo scrive il passo 9.
+non si scrive ancora: lo scrive il passo 10.
 
-## 4. Permessi
+**Guardia v1.** Se nella radice ci sono le cartelle `cards/`, `orders/` o `project/`, la struttura è quella della v1:
+fermati e di' che la migrazione è una procedura a parte, fuori dal plugin. Un progetto v1 letto dalle skill v2 non dà
+errori: dà elenchi vuoti, e sembra funzionare.
+
+## 6. Permessi
 
 In `.claude/settings.local.json` della cartella di lavoro, sotto `permissions.allow`:
 
@@ -59,21 +82,18 @@ gli stessi percorsi: barre rovesciate, lettera di unità con i due punti, spazi 
 Una voce malformata non dà errore: fallisce in silenzio, e l'operatore si ritrova la domanda di permesso a cui
 credeva di aver già risposto.
 
-## 5. Struttura
-
-Crea dentro la radice `project/`, `orders/` e `cards/`, se mancano. Nessun file dentro: un documento nasce quando
-c'è qualcosa da metterci. Quello che esiste già accanto a queste cartelle non si tocca.
-
-## 6. File per le skill di Matt
+## 7. File per le skill di Matt
 
 Scrivi `docs/agents/issue-tracker.md`, `domain.md` e `triage-labels.md` nella cartella di lavoro, copiandoli da
 `${CLAUDE_PLUGIN_ROOT}/templates/matt/`. Un file identico al modello è adottato. Uno diverso si mostra, riassumendo
 le differenze, e si sovrascrive solo dopo conferma.
 
-## 7. Blocco nel `CLAUDE.md`
+## 8. Blocco nel `CLAUDE.md`
 
-Prendi `${CLAUDE_PLUGIN_ROOT}/templates/claude-block.md` e sostituisci `{{REPO}}` con il percorso del repository.
-Nel `CLAUDE.md` della cartella di lavoro:
+Prendi `${CLAUDE_PLUGIN_ROOT}/templates/claude-block.md` e sostituisci `{{REPO}}` con il percorso del repository,
+`{{MAIN}}` con il branch principale, `{{LANGUAGE}}` con la lingua dei documenti del repository (per esempio
+«inglese»), `{{ARCHITECTURE}}`, `{{GLOSSARY}}`, `{{DECISIONS}}` e `{{CONSTRAINTS}}` con i loro percorsi. Nel
+`CLAUDE.md` della cartella di lavoro:
 
 - se c'è già un blocco fra `<!-- cardflow:begin` e `<!-- cardflow:end -->`, sostituiscilo al suo posto;
 - altrimenti aggiungilo in fondo; se il file non esiste, crealo con il solo blocco.
@@ -81,29 +101,34 @@ Nel `CLAUDE.md` della cartella di lavoro:
 Se fuori dal blocco il file ha una sezione `## Agent skills`, o sezioni che descrivono un altro metodo di lavoro
 (tracker, registri, commit), mostrale e chiedi se toglierle: il blocco le sostituisce. Non toglierle da solo.
 
-## 8. superpowers
+## 9. superpowers
 
 Cerca `superpowers` fra i plugin installati, in `~/.claude/plugins/installed_plugins.json`. Se c'è, scrivi la sua
 chiave (`superpowers@<marketplace>`) con valore `false` sotto `enabledPlugins` in `.claude/settings.local.json`: il
 suo hook di avvio impone un metodo concorrente. Se non è installato, non scrivere nulla.
 
-## 9. Controllo finale e `.WORKDIR`
+## 10. Controllo finale e `.WORKDIR`
 
 Prima di dichiarare riuscita la configurazione, verifica che:
 
 - il percorso di `.work/` sia assoluto, la cartella esista e stia fuori dal repository;
+- il branch principale esista nel repository;
+- i percorsi dei documenti del repository siano relativi e stiano dentro il repository;
 - con la cartella separata, nessun file scritto da questo comando stia dentro il repository;
 - nessun permesso che riguarda `.work/`, il plugin o il repository sia malformato;
-- `docs/agents/` abbia i tre file e il `CLAUDE.md` abbia il blocco.
+- `docs/agents/` abbia i tre file e il `CLAUDE.md` abbia il blocco, senza segnaposto `{{…}}` rimasti.
 
 Se tutto regge, scrivi `.WORKDIR` nella cartella di lavoro: una riga sola, il percorso assoluto, senza BOM. Se
 esiste già con lo stesso percorso, lascialo com'è. **Se il controllo non passa, `.WORKDIR` non si scrive** e riporti
 che cosa blocca: un `.WORKDIR` presente promette che la configurazione funziona.
 
-## 10. Rapporto
+## 11. Rapporto
 
 Una tabella con voce, esito e nota, poi le decisioni ancora aperte. Rilanciato su un progetto già configurato,
 tutto deve risultare adottato.
 
 Con la cartella separata, ricorda che Claude Code deve partire dalla `.ai/`: in un workspace di VS Code con più
 cartelle, la `.ai/` va messa per prima.
+
+Chiudi con il primo passo: `/cardflow:branch-new <principale>` per scrivere che cosa deve fare la prossima versione,
+oppure direttamente `/cardflow:card-new`.

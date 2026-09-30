@@ -1,6 +1,6 @@
 ---
 name: closure-reviewer
-description: Rivede una card cardflow intera alla chiusura. Confronta tutta la differenza dal commit Base con 1-SPEC.md e le sue deviazioni, e controlla le decisioni da portare nei registri. Solo spec e coerenza fra ticket, niente stile. Sola lettura, riporta e non modifica.
+description: Rivede una card cardflow intera alla chiusura. Confronta tutti i commit della card sul suo branch con la spec della card e le sue deviazioni, controlla le voci da portare nei documenti del repository con la prova dell'essenziale, e i passi di installazione. Solo spec e coerenza fra ticket, niente stile. Sola lettura, riporta e non modifica.
 tools: Read, Grep, Glob, Bash
 model: opus
 effort: xhigh
